@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Radio Script</title>
+    <style>
+        .preloader {
+            display: none;
+        }
+        .loading * {
+            display: block;
+        }
+        .loading audio {
+            display: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(e) {
+            var url = 'https://o.tavrmedia.ua/hit';
+            var dela1y = 10000;
+            var timerID = setTimeout(function req() {
+                getSongs(url, timerID, req, dela1y);
+            }, 0);
+        });
+        function getSongs(url, id, func, delay) {
+            $.ajax({
+                method: 'get',
+                url: url,
+                success: function(data){
+                    var listData = JSON.parse(data);
+                    var list = $('.palylist');
+                    list.html('');
+                    listData.forEach(function(i) {
+                        var item = `<li><span class="time">${i['time']}</span>
+            <span class="song">
+                <a href="${i['singer_url']}" class="author">${i['singer']}</a> - <a href="${i['singer_url']}" class="title">${i['song']}</a>
+            </span>
+            <img src="${i['cover']}" alt="${i['song']}"></li>`;
+                        list.append(item);
+                    })
+                },
+                error: function(data) {
+                    console.error(data.statusText);
+                },
+                complete: function() {
+                    $('body').removeClass('loading');
+                    id = setTimeout(func, delay);
+                    console.log(id);
+                }
+            });
+        }
+    </script>
+</head>
+<body class="loading">
+    <div class="preloader">Loading</div>
+    <audio controls="true" src="http://online.hitfm.ua/HitFM_HD"></audio>
+    <ul class="palylist">
+    </ul>
+</body>
+</html>
