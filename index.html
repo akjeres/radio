@@ -4,26 +4,127 @@
     <meta charset="UTF-8">
     <title>Radio Script</title>
     <style>
+        audio {
+            display: none !important;
+        }
         .preloader {
             display: none;
         }
         .loading * {
-            display: block;
-        }
-        .loading audio {
             display: none;
+        }
+        .loading div.preloader {
+            display: block;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script>
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        const audioContext = new AudioContext();
         $(document).ready(function(e) {
             var url = 'https://o.tavrmedia.ua/hit';
-            var dela1y = 10000;
-            var timerID = setTimeout(function req() {
-                getSongs(url, timerID, req, dela1y);
-            }, 0);
+            var dela1y = 5000;
+            var radio = document.getElementById('audio');
+            var isPlay = false;
+            var src = 'http://online.hitfm.ua/HitFM_HD';
+            var playTxt = '&#9658;';
+            var pauseTxt = '&#9612;&#9612;';
+            var timerID;
+            var isload = false;
+            var control = $('.control');
+            control.on('click', function(e) {
+                var target = e.target;
+                isPlay = !isPlay;
+                isload = true;
+                console.log('target: ', e.target);
+                console.log('isPlay: ', isPlay);
+                if (isPlay) {
+                    play(radio, radio.querySelector('source'), src);
+                    timerID = setTimeout(function req() {
+                        getSongs(url, timerID, req, dela1y, radio);
+                    }, 0);
+                } else {
+                    pause(radio, radio.querySelector('source'), target, playTxt);
+                }
+            });
+            radio.addEventListener('playing' ,function(e) {
+                isPlay = true;
+                isload = false;
+                finishLoading();
+                document.querySelector('.control').innerHTML = pauseTxt;
+                console.log('networkState: ', this.networkState);
+            });
+//            radio.addEventListener('pause, abort, error' ,function(e) {
+//                isPlay = false;
+//                isload = false;
+//                timerID = null;
+//                finishLoading();
+//                pause(el, source);
+//            });
+            radio.addEventListener('pause' ,function(e) {
+                isPlay = false;
+                isload = false;
+                timerID = null;
+                finishLoading();
+                pause(radio, radio.querySelector('source'), control, playTxt);
+                console.log('paused');
+
+            });
+            radio.addEventListener('error' ,function(e) {
+                isPlay = false;
+                isload = false;
+                timerID = null;
+                finishLoading();
+                pause(radio, radio.querySelector('source'), control, playTxt);
+                console.log('error');
+            });
+            radio.addEventListener('abort' ,function(e) {
+                isPlay = false;
+                isload = false;
+                timerID = null;
+                finishLoading();
+                pause(radio, radio.querySelector('source'), control, playTxt);
+                console.log('abort');
+            });
+            radio.addEventListener('progress', function(e) {
+//                console.log('current state: ', e.target.networkState);
+//                console.log('buffered: ', e.target.buffered);
+                if (this.networkState < 1) {
+                    pause(this, this.querySelector('source'), control, playTxt);
+                }
+            });
+
+            function pause(el, source, control, txt) {
+                source.setAttribute("src", "");
+                el.pause();
+                // settimeout, otherwise pause event is not raised normally
+                setTimeout(function () {
+                    el.load(); // This stops the stream from downloading
+                    timerID = null;
+                    control.innerHTML = txt;
+                    finishLoading();
+                });
+            }
+
+            function play(el, source, initSrc) {
+                loading();
+                if (!source.getAttribute("src")) {
+                    source.setAttribute("src", initSrc);
+                    el.load(); // This restarts the stream download
+                }
+                el.play();
+            }
+            function loading() {
+                document.body.classList.add('loading');
+                document.querySelector('.control').innerHTML = !isPlay ? playTxt : pauseTxt;
+            }
+            function finishLoading() {
+                document.body.classList.remove('loading');
+                document.querySelector('.control').innerHTML = !isPlay ? playTxt : pauseTxt;
+            }
         });
-        function getSongs(url, id, func, delay) {
+        function getSongs(url, id, func, delay, audio) {
             $.ajax({
                 method: 'get',
                 url: url,
@@ -44,17 +145,31 @@
                     console.error(data.statusText);
                 },
                 complete: function() {
-                    $('body').removeClass('loading');
-                    id = setTimeout(func, delay);
-                    console.log(id);
+                    if (audio.networkState > 0 && audio.networkState < 3 && audio.readyState >= 2) {
+                        id = setTimeout(func, delay);
+                    } else {
+                        clearTimeout(id);
+                    }
+                    console.log('TimerID: ', id);
+                    console.log('networkState ajax: ', audio.networkState);
+                    console.log('buffered ajax: ', audio.buffered);
+                    console.log('ended ajax: ', audio.ended);
+                    console.log('paused ajax: ', audio.paused);
+                    console.log('seekable ajax: ', audio.seekable);
+                    console.log('readyState ajax: ', audio.readyState);
                 }
             });
         }
     </script>
 </head>
-<body class="loading">
+<body>
     <div class="preloader">Loading</div>
-    <audio controls="true" src="http://online.hitfm.ua/HitFM_HD"></audio>
+    <div class="player">
+        <button class="control">&#9658;</button>
+    </div>
+    <audio id="audio" controls="true">
+        <source src="http://online.hitfm.ua/HitFM_HD">
+    </audio>
     <ul class="palylist">
     </ul>
 </body>
