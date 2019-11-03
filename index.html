@@ -139,14 +139,28 @@
 
             return new Audio(audioSRC);
         }
+        window.addEventListener('load', function() {
+            var radioNode = document.getElementById('audio');
+            var buttons = document.getElementById('buttons');
+            buttons.addEventListener('click', function (e) {
+                var target = e.target.closest('button');
+                if (!target) return;
+
+                radioNode[target.textContent.toLowerCase()]();
+            });
+        });
     </script>
 </head>
 <body>
     <div class="preloader">Loading</div>
     <div class="player"><button class="control"></button></div>
-    <audio id="audio" controls="true">
+    <audio id="audio" controls="true" preload="none">
         <source src="http://online.hitfm.ua/HitFM_HD">
     </audio>
     <ul class="palylist"></ul>
+    <div id="buttons">
+        <button>play</button>
+        <button>pause</button>
+    </div>
 </body>
 </html>
