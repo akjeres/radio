@@ -16,7 +16,8 @@
         .loading div.preloader {
             display: block;
         }
-        .control {
+        .control,
+        select {
             cursor: pointer;
         }
     </style>
@@ -26,8 +27,10 @@
         var player = radio;
         var playButton = player;
         var volumeControl = playButton;
+        var select = volumeControl;
         var isPaused = true;
         var isMuted = false;
+        var volume = 1;
         var playTxt = '&#9658;';
         var pauseTxt = '&#9612;&#9612;';
         var eventEnabled = false;
@@ -37,6 +40,8 @@
         window.addEventListener('load', function(event) {
             console.log('window loaded');
             console.log('window loaded. eventEnabled: ', eventEnabled);
+            // Audio tag
+            radio = document.getElementById('audio');
             // Player
             player = document.querySelector('.player');
 
@@ -48,10 +53,26 @@
                 isPaused = playButtonHanler(this, playAudio, stopAudio);
             }, false);
 
-
             // Enable events
             eventEnabled = true;
             console.log('events enabled. eventEnabled: ', eventEnabled);
+
+            // Radio event Listeners
+            radio.addEventListener('progress', progressListener);
+            radio.addEventListener('loadeddata', enableBodyListener);
+            radio.addEventListener('seeked', function(event) {
+                console.log('seeked');
+            });
+            radio.addEventListener('error', function(event) {
+                console.log('error');
+                stopAudio();
+                this.removeEventListener('stalled', stalledHandler);
+            });
+            // Select event Listeners
+            select = document.getElementById('src_select');
+            select.addEventListener('change', selectChange);
+
+            document.body.classList.remove('loading');
         });
 
         function playButtonHanler(button, playHandler, pauseHandler) {
@@ -74,93 +95,88 @@
         };
 
         function playAudio() {
-            radio = getAudio('audio');
-            console.log('radio is loading');
-            console.log(this);
-            radio.addEventListener('loadeddata', function() {
-                if(radio.readyState >= 2) {
-                    radio.play();
-                    console.log('audio is playing now');
-                    console.log('duration: ', radio.duration);
-                    eventEnabled = true;
-                } else {
-                    console.log('there was some error while loading audio');
-                    stopAudio();
-                }
-            });
-            function progressListener() {
-                console.log('paused: ', this.paused);
-            }
-            radio.addEventListener('progress', progressListener);
-            radio.addEventListener('progress', function() {
-                if (this.paused) {
-                    this.removeEventListener('progress', progressListener);
-                }
-            });
-            radio.addEventListener('emptied', function(event) {
-                stopAudio();
-                console.log('empty');
-            });
-            radio.addEventListener('stalled', function(event) {
-                this.pause();
-                this.currentTime = 0;
-                console.log('stalled');
-            });
-            radio.addEventListener('ended', function() {
-                console.error(`ended loading: ${this.src}`);
-                stopAudio();
-            });
-            radio.addEventListener('error', function() {
-                console.error(`Error loading: ${this.src}`);
-                stopAudio();
-            });
-            radio.addEventListener('abort', function() {
-                console.error(`Aborting: ${this.src}`);
-                stopAudio();
-            });
-        };
+            document.body.classList.add('loading');
+            var srcSelect = document.getElementById('src_select');
+            var value = JSON.parse(srcSelect['value']);
+            console.log('play');
+            radio.src = value['src'];
+            radio.addEventListener('stalled', stalledHandler);
+            radio.play();
+        }
         function stopAudio() {
             console.log('audio is stopped now');
 
             if (radio) {
                 radio.pause();
                 radio.currentTime = 0;
-                radio.src = null;
-                radio.load();
             }
-            radio = null;
+            isPaused = true;
             eventEnabled = true;
-
-            console.log(this);
-        };
-        function getAudio(id) {
-            var audioTag = document.getElementById(id);
-            var audioSRC = audioTag.querySelector('source')['src'];
-
-            return new Audio(audioSRC);
+            playButton.innerHTML = playTxt;
+            document.body.classList.remove('loading');
         }
-        window.addEventListener('load', function() {
-            var radioNode = document.getElementById('audio');
-            var buttons = document.getElementById('buttons');
-            buttons.addEventListener('click', function (e) {
-                var target = e.target.closest('button');
-                if (!target) return;
+        function progressListener() {
+            eventEnabled = false;
+            isPaused = this.paused;
+            isMuted = this.muted;
+            console.log('paused: ', isPaused);
+            console.log('muted: ', this.muted);
+            var txt = pauseTxt;
+            if (isPaused) {
+                txt = playTxt;
+            }
+            playButton.innerHTML = txt;
+            playButton.dataset['paused'] = Number(isPaused);
+            document.body.classList.remove('loading');
+            eventEnabled = true;
+        }
 
-                radioNode[target.textContent.toLowerCase()]();
-            });
-        });
+        function enableBodyListener() {
+            console.log(this);
+            console.log('loadeddata');
+                if(this.readyState >= 2) {
+                    console.log('audio is playing now');
+                    document.body.classList.remove('loading');
+                    eventEnabled = true;
+                } else {
+                    console.log('there was some error while loading audio');
+                    stopAudio();
+                }
+        }
+
+        function selectChange() {
+            eventEnabled = false;
+            var self = this;
+            var value = JSON.parse(self['value']);
+            if (isPaused) {
+                eventEnabled = true;
+                return;
+            }
+            stopAudio();
+            playAudio();
+
+            console.log('changed: ', self);
+            console.log('value: ', value);
+            console.log('isPaused: ', isPaused);
+            eventEnabled = true;
+        }
+
+        function stalledHandler() {
+            console.log('stalled');
+            document.body.classList.add('loading');
+            stopAudio();
+            playAudio();
+        }
     </script>
 </head>
-<body>
+<body class="loading">
     <div class="preloader">Loading</div>
     <div class="player"><button class="control"></button></div>
-    <audio id="audio" controls="true" preload="none">
-        <source src="http://online.hitfm.ua/HitFM_HD">
-    </audio>
+    <select name="src_select" id="src_select">
+        <option value='{"src":"http://online.hitfm.ua/HitFM_HD","request":"https://o.tavrmedia.ua/hit"}'>Hit FM</option>
+        <option value='{"src":"http://online.kissfm.ua/KissFM","request":"https://o.tavrmedia.ua/kiss"}'>KISS FM</option>
+    </select>
+    <audio id="audio" controls="true" preload="none" src=""></audio>
     <ul class="palylist"></ul>
-    <div id="buttons">
-        <button>play</button>
-        <button>pause</button>
-    </div>
 </body>
 </html>
