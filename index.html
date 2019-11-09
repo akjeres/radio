@@ -4,8 +4,37 @@
     <meta charset="UTF-8">
     <title>Radio Script</title>
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .app {
+            width: calc(100% - 30px);
+            margin: 15px auto auto auto;
+            max-width: 400px;
+        }
+        .preloader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            text-align: center;
+            background: #fff;
+            justify-content: center;
+            align-items: center;
+        }
+        .preloader span {
+            display: block;
+            margin: auto;
+            font-size: 1.5em;
+        }
         * {
             font-family: monospace;
+        }
+        option {
+            font-family: inherit;
         }
         .mobile .volume-level,
         audio {
@@ -16,7 +45,7 @@
             display: none;
         }
         .loading div.preloader {
-            display: block;
+            display: flex;
         }
         .control,
         select {
@@ -24,9 +53,68 @@
         }
         button {
             width: 35px;
+            height: 35px;
+            display: block;
+            margin-right: 15px;
+            background: none center no-repeat buttonface;
+            background-size: 20px;
+        }
+        .player {
+            display: flex;
+            justify-content: flex-start;
+            align-items: stretch;
+            margin-bottom: 15px;
+        }
+        .player_title {
+            margin: 0 auto 15px auto;
+            text-align: center;
+        }
+        .volume-level {
+            display: block;
+            margin: 0;
+            flex: 1;
+        }
+        .playlist_wrapper {
+            margin-bottom: 15px;
+        }
+        .playlist_wrapper:last-child {
+            margin-bottom: 0;
+        }
+        .playlist_title {
+            text-align: center;
+            margin: 0 auto 15px auto;
+        }
+        .playlist {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .station_select {
+            display: block;
+            width: 100%;
+            height: 35px;
+            margin: 0 auto 15px auto;
+            text-align: center;
+        }
+        .playlist_item {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        .playlist_item__logo {
+            display: block;
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            margin-right: 15px;
+            background: none center no-repeat buttonface;
+        }
+        .playlist_item:last-child {
+            margin-bottom: 0;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
         window.mobileAndTabletcheck = function() {
             var check = false;
@@ -39,21 +127,67 @@
         var volumeLevel = playButton;
         var select = volumeLevel;
         var muteButton = select;
+        var timerID = muteButton;
+        var appTitle = timerID;
+        var currentList = appTitle;
+        var previousList = currentList;
         var isPaused = true;
         var isMuted = false;
         var volume = 1;
-        var playTxt = '&#9658;';
-        var pauseTxt = '&#9612;&#9612;';
-        var muteTxt = '&#128263;';
+        var delay = 7500;
+        var playTxt = 'play';
+        var pauseTxt = 'pause';
+        var muteTxt = 'mute';
         var speakerTxt = [
-            '&#128264;',
-            '&#128265;',
-            '&#128266;',
+            'speaker-0',
+            'speaker-1',
+            'speaker-2',
+            'speaker-3',
         ];
+        var imagePrefix = './icons/';
+        var imageSuffix = '.svg';
         var eventEnabled = false;
         console.log('script. eventEnabled: ', eventEnabled);
-
-
+        (function() {
+            var imgsArr = [
+                'mute',
+                'pause',
+                'play',
+                'speaker-0',
+                'speaker-1',
+                'speaker-2',
+                'speaker-3',
+            ];
+            imgsArr.forEach(function (i) {
+                var item = document.createElement('img');
+                item['src'] = imagePrefix + i + imageSuffix;
+            });
+        })();
+        const CancelToken = axios.CancelToken;
+        let cancel;
+        var getTrackData = (url, current, previous) => axios.get(url, {
+            cancelToken: new CancelToken(function executor(c) {
+                // An executor function receives a cancel function as a parameter
+                cancel = c;
+            })
+        })
+        .then(function (response) {
+            var data = response['data'].concat();
+            console.log('data: ', response);
+            var currentData = data.shift();
+            console.log('current');
+            renderData(current, currentData);
+            console.log('previous');
+            renderData(previous, data);
+        })
+        .catch(function (error) {
+            // handle error
+            console.log(error);
+        })
+        .finally(function() {
+            document.body.classList.remove('loading');
+            eventEnabled = true;
+        });
         window.addEventListener('load', function(event) {
             if (mobileAndTabletcheck()) {
                 document.body.classList.add('mobile');
@@ -64,13 +198,16 @@
                 radio = document.getElementById('audio');               // Audio
                 player = document.querySelector('.player');             // Player
                 muteButton = player.querySelector('.mute-button');      // Mute button
-                volumeLevel = player.querySelector('.volume-level');  // Volume level
-
+                volumeLevel = player.querySelector('.volume-level');    // Volume level
+                appTitle = document.querySelector('.player_title');     // Application title
+                currentList = document.querySelector('.current');       // Current playing
+                previousList = document.querySelector('.previous');     // Previously played
             // Player
                 // Play/Pause button
             playButton = player.querySelector('.play-button');
             playButton.dataset['paused'] = Number(isPaused);
-            playButton.innerHTML = isPaused ? playTxt : pauseTxt;
+            var pauseValue = isPaused ? playTxt : pauseTxt;
+            setText(playButton, pauseValue, imagePrefix, imageSuffix);
             playButton.addEventListener('click', function(e) {
                 isPaused = playButtonHanler(this, playAudio, stopAudio);
             }, false);
@@ -100,14 +237,18 @@
             });
             radio.addEventListener('error', function(event) {
                 console.log('error');
+                console.error(event['message']);
                 stopAudio();
-                this.removeEventListener('stalled', stalledHandler);
             });
             // Select event Listeners
             select = document.getElementById('src_select');
             select.addEventListener('change', selectChange);
 
             document.body.classList.remove('loading');
+            timerID = setTimeout(function request() {
+                getTrackData(JSON.parse(select['value'])['request'], currentList, previousList);
+                timerID = setTimeout(request, delay);
+            },0);
             // Enable events
             eventEnabled = true;
             console.log('events enabled. eventEnabled: ', eventEnabled);
@@ -127,7 +268,7 @@
                 txt = pauseTxt;
                 playHandler();
             }
-            button.innerHTML = txt;
+            setText(button, txt, imagePrefix, imageSuffix);
 
             return Number(button.dataset['paused']);
         };
@@ -140,7 +281,7 @@
             radio.src = value['src'];
             radio.addEventListener('stalled', stalledHandler);
             radio.play();
-        }
+        };
         function stopAudio() {
             console.log('audio is stopped now');
 
@@ -148,11 +289,14 @@
                 radio.pause();
                 radio.currentTime = 0;
             }
+            cancel();
+            clearTimeout(timerID);
+            console.log('timerID: ', timerID);
             isPaused = true;
             eventEnabled = true;
-            playButton.innerHTML = playTxt;
+            setText(playButton, playTxt, imagePrefix, imageSuffix);
             document.body.classList.remove('loading');
-        }
+        };
         function progressListener() {
             eventEnabled = false;
             isPaused = this.paused;
@@ -163,11 +307,11 @@
             if (isPaused) {
                 txt = playTxt;
             }
-            playButton.innerHTML = txt;
+            setText(playButton, txt, imagePrefix, imageSuffix);
             playButton.dataset['paused'] = Number(isPaused);
             document.body.classList.remove('loading');
             eventEnabled = true;
-        }
+        };
 
         function enableBodyListener() {
             console.log(this);
@@ -180,77 +324,136 @@
                     console.log('there was some error while loading audio');
                     stopAudio();
                 }
-        }
+        };
 
         function selectChange() {
             eventEnabled = false;
             var self = this;
             var value = JSON.parse(self['value']);
+
             if (isPaused) {
-                eventEnabled = true;
-                return;
+                document.body.classList.add('loading');
+            } else {
+                stopAudio();
+                playAudio();
             }
-            stopAudio();
-            playAudio();
+            appTitle.textContent = value['name'];
+            timerID = setTimeout(function request() {
+                getTrackData(value['request'], currentList, previousList);
+                timerID = setTimeout(request, delay);
+            },0);
 
             console.log('changed: ', self);
             console.log('value: ', value);
             console.log('isPaused: ', isPaused);
             eventEnabled = true;
-        }
+        };
 
         function stalledHandler() {
             console.log('stalled');
             document.body.classList.add('loading');
             stopAudio();
             playAudio();
-        }
+        };
 
         function setMuteButtonText(node) {
             if (radio.muted) {
-                node.innerHTML = muteTxt;
+                node.style.backgroundImage = 'url(' + imagePrefix + muteTxt + imageSuffix + ')';
                 return;
             }
 
-            node.innerHTML = speakerTxt[getDiapason(radio['volume'])];
-        }
+            node.style.backgroundImage = 'url(' + imagePrefix + speakerTxt[getDiapason(radio['volume'])] + imageSuffix + ')';
+        };
 
         function getDiapason(num) {
-            if (num > 1 || num > 2/3) return 2;
+            if (num >= 1) return 3;
 
-            if (num > 1/3) return 1;
+            if (num > 1/2) return 2;
+
+            if (num > 0) return 1;
 
             return 0;
-        }
+        };
 
         function volumeLevelHandler() {
             var value = this['value'];
             var valueForDec = Number(value/100);
 
-            radio['muted'] = !valueForDec;
-            isMuted = !valueForDec;
             volume = valueForDec;
             radio['volume'] = valueForDec;
 
             setMuteButtonText(muteButton);
 
             console.log(value);
+        };
+
+        function renderData(node, data) {
+            console.log('node: ', node);
+            if (!Array.isArray(data)) {
+                data = [data];
+            }
+            while (node.firstChild) node.removeChild(node.firstChild);
+            Array.prototype.forEach.call(data, function (i) {
+                node.appendChild(renderItem(i));
+            });
         }
+
+        function setText(destination, value, prefix, suffix) {
+            destination.style.backgroundImage = 'url(' + prefix + value + suffix + ')';
+        }
+
+        function renderItem(data) {
+            var img = data['cover'] ? 'background-image:url(' + data['cover'] + ')' : '';
+            var result = document.createElement('li');
+            var logo = document.createElement('span');
+            var info = document.createElement('span');
+            var singer = document.createElement('span');
+            var separator = document.createElement('span');
+            var song = document.createElement('span');
+            result.className = 'playlist_item';
+            logo.className = 'playlist_item__logo';
+            info.className = 'playlist_item__info';
+            singer.className = 'playlist_item__singer';
+            separator.className = 'playlist_item__separator';
+            song.className = 'playlist_item__song';
+            logo.style = img;
+            singer.textContent = data['singer'];
+            separator.innerHTML = '&nbsp;&mdash;&nbsp;';
+            song.textContent = data['song'];
+            result.appendChild(logo);
+            info.appendChild(singer);
+            info.appendChild(separator);
+            info.appendChild(song);
+            result.appendChild(info);
+
+            return result;
+        }
+
 
     </script>
 </head>
 <body class="loading">
-    <div class="preloader">Loading</div>
-    <div class="player">
-        <button class="control play-button"></button>
-        <button class="control mute-button"></button>
-        <input type="range" name="volume-level" class="control volume-level" min="0" max="100" step="1" value="100">
+    <div class="preloader"><span>Loading</span></div>
+    <div class="app">
+        <h1 class="player_title">Hit FM</h1>
+        <div class="player">
+            <button class="control play-button"></button>
+            <button class="control mute-button"></button>
+            <input type="range" name="volume-level" class="control volume-level" min="0" max="100" step="1" value="100">
+        </div>
+        <select class="station_select" name="src_select" id="src_select">
+            <option value='{"src":"http://online.hitfm.ua/HitFM_HD","request":"https://o.tavrmedia.ua/hit","name":"Hit FM"}'>Hit FM</option>
+            <option value='{"src":"http://online.kissfm.ua/KissFM","request":"https://o.tavrmedia.ua/kiss","name":"KISS FM"}'>KISS FM</option>
+        </select>
+        <audio id="audio" controls="true" preload="none" src=""></audio>
+        <article class="playlist_wrapper">
+            <h2 class="playlist_title">Is playing now</h2>
+            <ul class="playlist current"></ul>
+        </article>
+        <article class="playlist_wrapper">
+            <h2 class="playlist_title">Was playing previously</h2>
+            <ul class="playlist previous"></ul>
+        </article>
     </div>
-    <select name="src_select" id="src_select">
-        <option value='{"src":"http://online.hitfm.ua/HitFM_HD","request":"https://o.tavrmedia.ua/hit","name":"Hit FM"}'>Hit FM</option>
-        <option value='{"src":"http://online.kissfm.ua/KissFM","request":"https://o.tavrmedia.ua/kiss","name":"KISS FM"}'>KISS FM</option>
-    </select>
-    <audio id="audio" controls="true" preload="none" src=""></audio>
-    <ul class="palylist"></ul>
 </body>
 </html>
