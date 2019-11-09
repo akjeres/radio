@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Radio Script</title>
-    <style>body{margin:0;padding:0}.app{width:-webkit-calc(100% - 30px);width:calc(100% - 30px);margin:15px auto auto auto;max-width:400px}.preloader{position:fixed;width:100%;height:100%;top:0;left:0;z-index:1;text-align:center;background:#fff;-webkit-box-pack:center;-webkit-justify-content:center;-ms-flex-pack:center;justify-content:center;-webkit-box-align:center;-webkit-align-items:center;-ms-flex-align:center;align-items:center}.preloader span{display:block;margin:auto;font-size:1.5em}*{font-family:monospace}option{font-family:inherit}.mobile .volume-level,audio{display:none!important}.loading *,.preloader{display:none}.loading div.preloader{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex}.control,select{cursor:pointer}button{width:35px;height:35px;display:block;margin-right:15px;background:none center no-repeat buttonface;-webkit-background-size:20px 20px;background-size:20px}.player{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-box-pack:start;-webkit-justify-content:flex-start;-ms-flex-pack:start;justify-content:flex-start;-webkit-box-align:stretch;-webkit-align-items:stretch;-ms-flex-align:stretch;align-items:stretch;margin-bottom:15px}.player_title{margin:0 auto 15px auto;text-align:center}.volume-level{display:block;margin:0;-webkit-box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1}.playlist_wrapper{margin-bottom:15px}.playlist_wrapper:last-child{margin-bottom:0}.playlist_title{text-align:center;margin:0 auto 15px auto}.playlist{padding:0;margin:0;list-style:none}.station_select{display:block;width:100%;height:35px;margin:0 auto 15px auto;text-align:center}.playlist_item{margin-bottom:5px;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-box-pack:start;-webkit-justify-content:flex-start;-ms-flex-pack:start;justify-content:flex-start;-webkit-box-align:center;-webkit-align-items:center;-ms-flex-align:center;align-items:center}.playlist_item__logo{display:block;width:35px;height:35px;-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0;margin-right:15px;background:none center no-repeat buttonface}.playlist_item:last-child{margin-bottom:0}</style>
+    <style>body{margin:0;padding:0}body.mobile button{margin:0 auto 0 8px}body.mobile button:first-child{margin:0 7px 0 auto}.app{width:-webkit-calc(100% - 30px);width:calc(100% - 30px);margin:15px auto auto auto;max-width:400px}.preloader{position:fixed;width:100%;height:100%;top:0;left:0;z-index:1;text-align:center;background:#fff;-webkit-box-pack:center;-webkit-justify-content:center;-ms-flex-pack:center;justify-content:center;-webkit-box-align:center;-webkit-align-items:center;-ms-flex-align:center;align-items:center}.preloader span{display:block;margin:auto;font-size:1.5em}*{font-family:monospace}option{font-family:inherit}.mobile .volume-level,audio{display:none!important}.loading *,.preloader{display:none}.loading div.preloader{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex}.control,select{cursor:pointer}button{width:35px;height:35px;display:block;margin-right:15px;background:none center no-repeat buttonface;-webkit-background-size:20px 20px;background-size:20px}.player{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-box-pack:start;-webkit-justify-content:flex-start;-ms-flex-pack:start;justify-content:flex-start;-webkit-box-align:stretch;-webkit-align-items:stretch;-ms-flex-align:stretch;align-items:stretch;margin-bottom:15px}.player_title{margin:0 auto 15px auto;text-align:center}.volume-level{display:block;margin:0;-webkit-box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1}.playlist_wrapper{margin-bottom:15px}.playlist_wrapper:last-child{margin-bottom:0}.playlist_title{text-align:center;margin:0 auto 15px auto}.playlist{padding:0;margin:0;list-style:none}.station_select{display:block;width:100%;height:35px;margin:0 auto 15px auto;text-align:center}.playlist_item{margin-bottom:5px;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-box-pack:start;-webkit-justify-content:flex-start;-ms-flex-pack:start;justify-content:flex-start;-webkit-box-align:center;-webkit-align-items:center;-ms-flex-align:center;align-items:center}.playlist_item__logo{display:block;width:35px;height:35px;-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0;margin-right:15px;background:none center no-repeat buttonface}.playlist_item:last-child{margin-bottom:0}</style>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
         window.mobileAndTabletcheck = function() {
@@ -61,23 +63,23 @@
                 cancel = c;
             })
         })
-        .then(function (response) {
-            var data = response['data'].concat();
-            console.log('data: ', response);
-            var currentData = data.shift();
-            console.log('current');
-            renderData(current, currentData);
-            console.log('previous');
-            renderData(previous, data);
-        })
-        .catch(function (error) {
-            // handle error
-            console.log(error);
-        })
-        .finally(function() {
-            document.body.classList.remove('loading');
-            eventEnabled = true;
-        });
+            .then(function (response) {
+                var data = response['data'].concat();
+                console.log('data: ', response);
+                var currentData = data.shift();
+                console.log('current');
+                renderData(current, currentData);
+                console.log('previous');
+                renderData(previous, data);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+            })
+            .finally(function() {
+                document.body.classList.remove('loading');
+                eventEnabled = true;
+            });
         window.addEventListener('load', function(event) {
             if (mobileAndTabletcheck()) {
                 document.body.classList.add('mobile');
@@ -85,15 +87,15 @@
             console.log('window loaded');
             console.log('window loaded. eventEnabled: ', eventEnabled);
             // Document entities
-                radio = document.getElementById('audio');               // Audio
-                player = document.querySelector('.player');             // Player
-                muteButton = player.querySelector('.mute-button');      // Mute button
-                volumeLevel = player.querySelector('.volume-level');    // Volume level
-                appTitle = document.querySelector('.player_title');     // Application title
-                currentList = document.querySelector('.current');       // Current playing
-                previousList = document.querySelector('.previous');     // Previously played
+            radio = document.getElementById('audio');               // Audio
+            player = document.querySelector('.player');             // Player
+            muteButton = player.querySelector('.mute-button');      // Mute button
+            volumeLevel = player.querySelector('.volume-level');    // Volume level
+            appTitle = document.querySelector('.player_title');     // Application title
+            currentList = document.querySelector('.current');       // Current playing
+            previousList = document.querySelector('.previous');     // Previously played
             // Player
-                // Play/Pause button
+            // Play/Pause button
             playButton = player.querySelector('.play-button');
             playButton.dataset['paused'] = Number(isPaused);
             var pauseValue = isPaused ? playTxt : pauseTxt;
@@ -101,7 +103,7 @@
             playButton.addEventListener('click', function(e) {
                 isPaused = playButtonHanler(this, playAudio, stopAudio);
             }, false);
-                // Mute button
+            // Mute button
             setMuteButtonText(muteButton);
             muteButton.addEventListener('click', function(e) {
                 isMuted = !isMuted;
@@ -115,7 +117,7 @@
                     volumeLevel['value'] = volume * 100;
                 }
             });
-                // Volume level
+            // Volume level
             volumeLevel.addEventListener('change', volumeLevelHandler);
             volumeLevel.addEventListener('input', volumeLevelHandler);
 
@@ -206,14 +208,14 @@
         function enableBodyListener() {
             console.log(this);
             console.log('loadeddata');
-                if(this.readyState >= 2) {
-                    console.log('audio is playing now');
-                    document.body.classList.remove('loading');
-                    eventEnabled = true;
-                } else {
-                    console.log('there was some error while loading audio');
-                    stopAudio();
-                }
+            if(this.readyState >= 2) {
+                console.log('audio is playing now');
+                document.body.classList.remove('loading');
+                eventEnabled = true;
+            } else {
+                console.log('there was some error while loading audio');
+                stopAudio();
+            }
         };
 
         function selectChange() {
@@ -323,27 +325,27 @@
     </script>
 </head>
 <body class="loading">
-    <div class="preloader"><span>Loading</span></div>
-    <div class="app">
-        <h1 class="player_title">Hit FM</h1>
-        <div class="player">
-            <button class="control play-button"></button>
-            <button class="control mute-button"></button>
-            <input type="range" name="volume-level" class="control volume-level" min="0" max="100" step="1" value="100">
-        </div>
-        <select class="station_select" name="src_select" id="src_select">
-            <option value='{"src":"http://online.hitfm.ua/HitFM_HD","request":"https://o.tavrmedia.ua/hit","name":"Hit FM"}'>Hit FM</option>
-            <option value='{"src":"http://online.kissfm.ua/KissFM","request":"https://o.tavrmedia.ua/kiss","name":"KISS FM"}'>KISS FM</option>
-        </select>
-        <audio id="audio" controls="true" preload="none" src=""></audio>
-        <article class="playlist_wrapper">
-            <h2 class="playlist_title">Is playing now</h2>
-            <ul class="playlist current"></ul>
-        </article>
-        <article class="playlist_wrapper">
-            <h2 class="playlist_title">Was playing previously</h2>
-            <ul class="playlist previous"></ul>
-        </article>
+<div class="preloader"><span>Loading</span></div>
+<div class="app">
+    <h1 class="player_title">Hit FM</h1>
+    <div class="player">
+        <button class="control play-button"></button>
+        <button class="control mute-button"></button>
+        <input type="range" name="volume-level" class="control volume-level" min="0" max="100" step="1" value="100">
     </div>
+    <select class="station_select" name="src_select" id="src_select">
+        <option value='{"src":"http://online.hitfm.ua/HitFM_HD","request":"https://o.tavrmedia.ua/hit","name":"Hit FM"}'>Hit FM</option>
+        <option value='{"src":"http://online.kissfm.ua/KissFM","request":"https://o.tavrmedia.ua/kiss","name":"KISS FM"}'>KISS FM</option>
+    </select>
+    <audio id="audio" controls="true" preload="none" src=""></audio>
+    <article class="playlist_wrapper">
+        <h2 class="playlist_title">Is playing now</h2>
+        <ul class="playlist current"></ul>
+    </article>
+    <article class="playlist_wrapper">
+        <h2 class="playlist_title">Was playing previously</h2>
+        <ul class="playlist previous"></ul>
+    </article>
+</div>
 </body>
 </html>
