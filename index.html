@@ -65,11 +65,8 @@
         })
             .then(function (response) {
                 var data = response['data'].concat();
-                console.log('data: ', response);
                 var currentData = data.shift();
-                console.log('current');
                 renderData(current, currentData);
-                console.log('previous');
                 renderData(previous, data);
             })
             .catch(function (error) {
@@ -109,8 +106,6 @@
                 isMuted = !isMuted;
                 radio['muted'] = isMuted;
                 setMuteButtonText(this);
-                console.log('radio.muted: ', radio.muted);
-                console.log('isMuted: ', isMuted);
                 if (isMuted) {
                     volumeLevel['value'] = 0;
                 } else {
@@ -169,21 +164,17 @@
             document.body.classList.add('loading');
             var srcSelect = document.getElementById('src_select');
             var value = JSON.parse(srcSelect['value']);
-            console.log('play');
             radio.src = value['src'];
             radio.addEventListener('stalled', stalledHandler);
             radio.play();
         };
         function stopAudio() {
-            console.log('audio is stopped now');
-
             if (radio) {
                 radio.pause();
                 radio.currentTime = 0;
             }
             cancel();
             clearTimeout(timerID);
-            console.log('timerID: ', timerID);
             isPaused = true;
             eventEnabled = true;
             setText(playButton, playTxt, imagePrefix, imageSuffix);
@@ -206,25 +197,25 @@
         };
 
         function enableBodyListener() {
-            console.log(this);
-            console.log('loadeddata');
+            var txt = 'play';
             if(this.readyState >= 2) {
-                console.log('audio is playing now');
+                txt = 'pause';
                 document.body.classList.remove('loading');
                 eventEnabled = true;
             } else {
                 console.log('there was some error while loading audio');
                 stopAudio();
             }
+            setText(playButton, txt, imagePrefix, imageSuffix);
         };
 
         function selectChange() {
             eventEnabled = false;
             var self = this;
             var value = JSON.parse(self['value']);
-
-            if (isPaused) {
-                document.body.classList.add('loading');
+            document.body.classList.remove('loading');
+            if (radio['paused']) {
+                document.body.classList.remove('loading');
             } else {
                 stopAudio();
                 playAudio();
@@ -234,10 +225,6 @@
                 getTrackData(value['request'], currentList, previousList);
                 timerID = setTimeout(request, delay);
             },0);
-
-            console.log('changed: ', self);
-            console.log('value: ', value);
-            console.log('isPaused: ', isPaused);
             eventEnabled = true;
         };
 
@@ -275,12 +262,9 @@
             radio['volume'] = valueForDec;
 
             setMuteButtonText(muteButton);
-
-            console.log(value);
         };
 
         function renderData(node, data) {
-            console.log('node: ', node);
             if (!Array.isArray(data)) {
                 data = [data];
             }
